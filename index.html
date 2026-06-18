@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Image Resizer & Compressor | Catvers Studio</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <style>
+        :root {
+            --bg-global: #eef2f6;
+            --surface: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --brand-primary: #4f46e5;
+            --brand-primary-hover: #4338ca;
+            --border-color: #cbd5e1;
+            
+            --shadow-3d-btn: 0 4px 0px 0px #cbd5e1, 0 8px 16px 0px rgba(15, 23, 42, 0.08);
+            --shadow-3d-btn-primary: 0 4px 0px 0px #3730a3, 0 8px 16px 0px rgba(79, 70, 229, 0.2);
+            --shadow-3d-inset: inset 0 3px 6px 0 rgba(15, 23, 42, 0.08), inset 0 1px 2px 0 rgba(15, 23, 42, 0.04);
+            --shadow-card-elevated: 0 12px 24px -4px rgba(15, 23, 42, 0.04), 0 4px 12px -2px rgba(15, 23, 42, 0.02), 0 0 0 1px rgba(15, 23, 42, 0.03);
+            
+            --spring-easing: cubic-bezier(0.34, 1.56, 0.64, 1);
+            --fast-easing: cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-global);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            overflow: hidden; 
+        }
+
+        .app-shell {
+            width: 100%;
+            max-width: 480px;
+            height: 100vh;
+            background-color: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-sizing: border-box;
+            border-left: 1px solid rgba(15, 23, 42, 0.08);
+            border-right: 1px solid rgba(15, 23, 42, 0.08);
+            box-shadow: 0 0 80px rgba(15, 23, 42, 0.05);
+            overflow: hidden;
+        }
+
+        .app-navigation {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 24px;
+            background: var(--surface);
+            border-bottom: 2px solid #e2e8f0;
+            flex-shrink: 0;
+            z-index: 100;
+        }
+
+        .brand-logo {
+            font-weight: 800;
+            font-size: 1.25rem;
+            letter-spacing: -0.5px;
+            color: var(--text-main);
+        }
+
+        .parent-link {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--brand-primary);
+            text-decoration: none;
+            background: #eef2ff;
+            padding: 6px 12px;
+            border-radius: 8px;
+            transition: all 0.2s var(--fast-easing);
+            border: 1px solid #dee2ff;
+        }
+
+        .parent-link:hover {
+            background: var(--brand-primary);
+            color: white;
+            border-color: var(--brand-primary);
+        }
+
+        .workspace-body {
+            position: relative;
+            flex: 1;
+            box-sizing: border-box;
+            overflow: hidden;
+            background: #f8fafc;
+        }
+
+        .home-landing-wrapper, .canvas-card {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex !important;
+            flex-direction: column;
+            box-sizing: border-box;
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.98);
+            transition: opacity 0.5s var(--fast-easing), transform 0.5s var(--fast-easing);
+            overflow: hidden;
+        }
+
+        .home-landing-wrapper.view-visible, .canvas-card.view-visible {
+            opacity: 1;
+            pointer-events: auto;
+            transform: scale(1);
+            z-index: 5;
+        }
+
+        .home-landing-wrapper {
+            justify-content: space-between;
+            align-items: center;
+            padding: 32px 24px;
+            background: linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%);
+            overflow-y: auto;
+        }
+
+        .landing-hero-header {
+            text-align: center;
+            margin-top: 8px;
+        }
+
+        .landing-hero-header h1 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--text-main);
+            margin: 0 0 10px 0;
+            letter-spacing: -0.8px;
+            line-height: 1.2;
+        }
+
+        .landing-hero-header p {
+            font-size: 0.92rem;
+            color: #475569;
+            line-height: 1.5;
+            max-width: 380px;
+            margin: 0 auto;
+            font-weight: 500;
+        }
+
+        .uploader-dropzone {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 2px dashed rgba(79, 70, 229, 0.3);
+            border-radius: 20px;
+            padding: 56px 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s var(--fast-easing);
+            box-shadow: var(--shadow-card-elevated);
+            width: 100%;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .uploader-dropzone:hover {
+            border-color: var(--brand-primary);
+            background: rgba(255, 255, 255, 0.95);
+            transform: translateY(-4px);
+            box-shadow: 0 24px 36px -8px rgba(79, 70, 229, 0.12);
+        }
+
+        .uploader-dropzone .upload-vector-icon {
+            width: 48px;
+            height: 48px;
+            background: #eef2ff;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 4px;
+            transition: background 0.2s ease;
+        }
+
+        .uploader-dropzone:hover .upload-vector-icon {
+            background: var(--brand-primary);
+        }
+
+        .uploader-dropzone:hover .upload-vector-icon svg { fill: #ffffff; }
+
+        .uploader-dropzone .upload-vector-icon svg {
+            width: 24px;
+            height: 24px;
+            fill: var(--brand-primary);
+            transition: fill 0.2s ease;
+        }
+
+        .uploader-dropzone .upload-headline-txt {
+            margin: 0;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .uploader-dropzone .upload-subline-txt {
+            margin: 0;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .landing-features-footer {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 16px;
+            padding: 16px;
+            box-sizing: border-box;
+            margin-bottom: 8px;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
+        }
+
+        .landing-features-footer h3 {
+            font-size: 0.88rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--text-main);
+            margin: 0 0 10px 0;
+            text-align: center;
+        }
+
+        .feature-bullet-item {
+            font-size: 0.82rem;
+            color: #475569;
+            line-height: 1.45;
+            margin: 0 0 8px 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+            font-weight: 500;
+        }
+
+        .feature-bullet-item:last-child { margin-bottom: 0; }
+        .feature-bullet-item span { color: var(--brand-primary); font-weight: bold; }
+
+        .canvas-card { padding: 24px; }
+
+        .pinned-preview-pane {
+            flex-shrink: 0;
+            background: #f8fafc;
+            padding-bottom: 4px;
+            z-index: 10;
+        }
+
+        .canvas-viewport-frame {
+            background-color: #ffffff;
+            background-image: linear-gradient(45deg, #e2e8f0 25%, transparent 25%), 
+                              linear-gradient(-45deg, #e2e8f0 25%, transparent 25%), 
+                              linear-gradient(45deg, transparent 75%, #e2e8f0 75%), 
+                              linear-gradient(-45deg, transparent 75%, #e2e8f0 75%);
+            background-size: 16px 16px;
+            background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+            width: 100%;
+            height: 220px; 
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+            box-shadow: var(--shadow-3d-inset);
+            border: 1px solid #cbd5e1;
+        }
+
+        .viewport-color-matte {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: transparent; 
+            opacity: 0;
+            pointer-events: none;
+            transition: background-color 0.15s var(--fast-easing), opacity 0.15s var(--fast-easing);
+            z-index: 1;
+        }
+
+        .canvas-viewport-frame #mainDisplayImage {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            display: block;
+            z-index: 2;
+        }
+
+        .canvas-micro-toolbar {
+            position: absolute;
+            top: 14px; right: 14px;
+            display: flex; gap: 10px;
+            z-index: 10;
+        }
+
+        .micro-action-btn {
+            background: var(--surface);
+            border: 1px solid var(--border-color);
+            width: 38px; height: 38px;
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            box-shadow: var(--shadow-3d-btn);
+            transition: transform 0.1s var(--fast-easing), box-shadow 0.1s var(--fast-easing);
+        }
+
+        .micro-action-btn:hover { transform: translateY(-1px); }
+        .micro-action-btn:active {
+            transform: translateY(3px);
+            box-shadow: 0 1px 0px 0px #cbd5e1;
+        }
+
+        .micro-action-btn svg { width: 18px; height: 18px; fill: var(--text-main); }
+        .micro-action-btn.btn-danger svg { fill: #ef4444; }
+
+        .meta-container { padding: 14px 2px 10px 2px; display: flex; flex-direction: column; gap: 6px; }
+        .meta-title-text {
+            font-weight: 700; font-size: 1rem; margin: 0;
+            color: var(--text-main); white-space: nowrap;
+            overflow: hidden; text-overflow: ellipsis;
+        }
+
+        .badge-row { display: flex; align-items: center; gap: 10px; }
+        .pill-badge {
+            font-size: 0.75rem; font-weight: 700; padding: 4px 10px;
+            border-radius: 6px; background: #e2e8f0; color: #334155;
+            border: 1px solid #cbd5e1;
+        }
+        .pill-badge.variant-success { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+
+        .scrollable-controls-pane {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 2px;
+            padding-bottom: 32px;
+            -webkit-overflow-scrolling: touch; 
+        }
+
+        .studio-controls-panel { display: flex; flex-direction: column; gap: 20px; }
+        .control-block {
+            background: var(--surface); padding: 18px; border-radius: 16px;
+            box-shadow: var(--shadow-card-elevated); border: 1px solid rgba(15, 23, 42, 0.04);
+        }
+
+        .input-group-label {
+            font-size: 0.75rem; font-weight: 800; text-transform: uppercase;
+            letter-spacing: 0.8px; color: var(--text-muted); margin-bottom: 12px;
+        }
+
+        .metadata-grid-box {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: #f8fafc;
+            padding: 14px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            font-size: 0.84rem;
+            color: var(--text-main);
+        }
+        .metadata-row-full {
+            width: 100%;
+            border-bottom: 1px dashed #e2e8f0;
+            padding-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            overflow: hidden;
+        }
+        .metadata-row-full span {
+            font-weight: 600;
+            color: var(--text-main);
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        .metadata-split-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .metadata-item-cell { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .metadata-item-cell strong { color: var(--text-muted); font-weight: 700; }
+
+        .premium-select, .premium-input {
+            width: 100%; padding: 14px;
+            border: 1px solid var(--border-color); border-radius: 10px;
+            font-size: 0.95rem; font-weight: 600; background: #f8fafc;
+            outline: none; box-sizing: border-box; color: var(--text-main);
+            box-shadow: var(--shadow-3d-inset); transition: all 0.15s ease;
+        }
+        .premium-input:focus, .premium-select:focus { border-color: var(--brand-primary); background: var(--surface); }
+
+        .segmented-3d-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .segmented-btn {
+            background: var(--surface); border: 1px solid var(--border-color);
+            padding: 12px 4px; border-radius: 10px; font-size: 0.82rem; font-weight: 700;
+            color: var(--text-muted); cursor: pointer; text-align: center;
+            box-shadow: var(--shadow-3d-btn); transition: all 0.1s var(--fast-easing);
+        }
+        .segmented-btn:hover { color: var(--text-main); }
+        .segmented-btn.active {
+            background: var(--text-main); color: white; border-color: var(--text-main);
+            box-shadow: 0 4px 0px 0px #334155; transform: translateY(0);
+        }
+        .segmented-btn:active:not(.active) { transform: translateY(3px); box-shadow: 0 1px 0px 0px #cbd5e1; }
+
+        .color-matrix-panel {
+            display: none; margin-top: 16px; padding-top: 14px;
+            border-top: 1px solid #e2e8f0; flex-direction: column; gap: 12px;
+        }
+        .color-matrix-panel.visible { display: flex; }
+        .wheel-flex-row { display: flex; align-items: center; gap: 14px; }
+        
+        .color-circle-wheel {
+            -webkit-appearance: none; -moz-appearance: none; appearance: none;
+            width: 52px; height: 52px; background: none; border: 2px solid var(--border-color);
+            border-radius: 50%; cursor: pointer; padding: 0; overflow: hidden; box-shadow: var(--shadow-3d-btn);
+        }
+        .color-circle-wheel::-webkit-color-swatch-wrapper { padding: 0; }
+        .color-circle-wheel::-webkit-color-swatch { border: none; border-radius: 50%; }
+
+        .hex-input-wrapper { flex: 1; }
+        .hex-input-wrapper span {
+            font-size: 0.72rem; font-weight: 800; color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: 0.4px; display: block; margin-bottom: 4px;
+        }
+
+        .dimension-toggle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;}
+        .dimensions-flex-row { display: none; align-items: center; gap: 12px; margin-top: 14px; }
+        .dimensions-flex-row.visible { display: flex; }
+        .relative-input-wrapper { flex: 1; position: relative; }
+        .relative-input-wrapper .input-unit {
+            position: absolute; right: 14px; top: 50%;
+            transform: translateY(-50%); font-size: 0.8rem; font-weight: 700; color: var(--text-muted);
+        }
+
+        .aspect-lock-toggle {
+            background: var(--surface); border: 1px solid var(--border-color);
+            width: 48px; height: 48px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; box-shadow: var(--shadow-3d-btn);
+        }
+        .aspect-lock-toggle.active { background: var(--text-main); border-color: var(--text-main); box-shadow: 0 4px 0px 0px #334155; }
+        .aspect-lock-toggle.active svg { fill: var(--surface); }
+        .aspect-lock-toggle:not(.active) svg { fill: var(--text-muted); }
+
+        .size-tracker-card {
+            background: #f1f5f9; border-radius: 12px; padding: 16px; font-size: 0.9rem; font-weight: 600; color: #475569;
+            display: flex; flex-direction: column; gap: 6px; box-shadow: var(--shadow-3d-inset); border: 1px solid #e2e8f0;
+        }
+
+        .primary-action-pill {
+            background: var(--brand-primary); color: #ffffff; border: none;
+            padding: 16px 24px; border-radius: 14px; font-size: 1rem; font-weight: 700;
+            cursor: pointer; width: 100%; box-shadow: var(--shadow-3d-btn-primary);
+            transition: transform 0.1s ease, box-shadow 0.1s ease; text-align: center; box-sizing: border-box;
+        }
+        .primary-action-pill:hover { background: var(--brand-primary-hover); }
+        .primary-action-pill:active { transform: translateY(4px); box-shadow: 0 0px 0px 0px #3730a3; }
+
+        .modal-overlay-sheet {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            z-index: 1000; display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.25s var(--fast-easing);
+        }
+        .modal-overlay-sheet.active { opacity: 1; pointer-events: auto; }
+
+        .modal-sheet-card {
+            background: #f8fafc; width: 90%; max-width: 420px; border-radius: 24px; 
+            display: flex; flex-direction: column; max-height: 85vh;
+            box-shadow: 0 24px 50px -12px rgba(15, 23, 42, 0.25); transform: scale(0.92); opacity: 0;
+            transition: transform 0.3s var(--spring-easing), opacity 0.25s ease;
+        }
+        
+        .modal-overlay-sheet.fullscreen-modal .modal-sheet-card {
+            width: 100vw; height: 100vh; max-width: 100vw; max-height: 100vh; border-radius: 0; transform: scale(1);
+        }
+        .modal-overlay-sheet.active .modal-sheet-card { transform: scale(1); opacity: 1; }
+
+        .modal-sheet-header {
+            padding: 20px 24px; border-bottom: 2px solid #e2e8f0;
+            display: flex; justify-content: space-between; align-items: center;
+            font-weight: 800; font-size: 1.1rem; background: var(--surface);
+        }
+        .modal-sheet-close {
+            cursor: pointer; color: var(--text-muted); font-size: 1.1rem;
+            width: 32px; height: 32px; background: #f1f5f9; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; font-weight: bold;
+        }
+
+        .modal-cropper-frame { background: #090d16; flex: 1; width: 100%; position: relative; overflow: hidden; }
+        .modal-cropper-frame img { max-width: 100%; display: block; }
+        .modal-scrollable-body { padding: 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 24px; }
+        
+        .modal-overlay-sheet.fullscreen-modal .modal-scrollable-body {
+            background: var(--surface); padding: 16px 24px; flex-shrink: 0; border-top: 1px solid #e2e8f0;
+        }
+
+        .rounded-square-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; width: 100%; box-sizing: border-box; margin-top: 4px; }
+        .square-radio-wrapper { width: 100%; }
+        .square-radio-wrapper input[type="radio"] { display: none; }
+        .square-selector-card {
+            background: var(--surface); border: 2px solid #cbd5e1; padding: 14px 4px; border-radius: 16px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.2s var(--fast-easing); box-shadow: var(--shadow-3d-btn);
+            user-select: none; box-sizing: border-box; text-align: center; min-height: 80px;
+        }
+        .square-selector-card:hover { border-color: #94a3b8; transform: translateY(-2px); }
+        
+        .square-radio-wrapper input[type="radio"]:checked + .square-selector-card {
+            border-color: var(--brand-primary); background: var(--brand-primary);
+            box-shadow: 0 12px 24px -4px rgba(79, 70, 229, 0.35), 0 4px 0px 0px #3730a3; transform: scale(1.04) translateY(-2px);
+        }
+        .square-radio-label { font-size: 1.1rem; font-weight: 800; color: var(--text-main); }
+        .square-radio-sub { font-size: 0.7rem; color: var(--text-muted); font-weight: 700; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.4px; }
+        
+        .square-radio-wrapper input[type="radio"]:checked + .square-selector-card .square-radio-label { color: #ffffff; }
+        .square-radio-wrapper input[type="radio"]:checked + .square-selector-card .square-radio-sub { color: rgba(255, 255, 255, 0.75); }
+
+        .modal-sheet-footer { padding: 20px 24px; border-top: 2px solid #e2e8f0; display: flex; gap: 14px; background: var(--surface); }
+        .footer-action-btn {
+            flex: 2; padding: 14px; border-radius: 12px; font-weight: 700; font-size: 0.95rem;
+            cursor: pointer; border: 1px solid var(--border-color); box-shadow: var(--shadow-3d-btn);
+            background: var(--surface); text-align: center;
+        }
+        .footer-action-btn:active { transform: translateY(3px); box-shadow: 0 1px 0px 0px #cbd5e1; }
+        .footer-action-btn.btn-primary { background: var(--brand-primary); color: white; border: none; box-shadow: var(--shadow-3d-btn-primary); }
+        .footer-action-btn.btn-primary:active { box-shadow: 0 0px 0px 0px #3730a3; }
+        .footer-action-btn.btn-secondary { flex: 1; background: #f1f5f9; color: var(--text-main); }
+
+        #hiddenFileLoader { display: none; }
+        .cropper-bg { background-image: none !important; background-color: #090d16 !important; }
+        .alpha-warning-callout {
+            background-color: #fff7ed; border: 1px solid #ffedd5; border-radius: 10px;
+            padding: 12px; font-size: 0.82rem; color: #c2410c; font-weight: 600; display: none; line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-shell">
+        <div class="app-navigation">
+            <div class="brand-logo">Image Resizer</div>
+            <a href="https://catversstudio.github.io/home/" target="_blank" class="parent-link">Catvers Studio</a>
+        </div>
+
+        <div class="workspace-body">
+            
+            <div class="home-landing-wrapper view-visible" id="homeScreenWrapper">
+                <div class="landing-hero-header">
+                    <h1>Image Resizer, Cropper & Compressor</h1>
+                    <p>Easily resize, crop, format, and compress your photos online in seconds. Fast, secure, and completely local inside your browser.</p>
+                </div>
+
+                <div class="uploader-dropzone" id="dropzoneContainer" onclick="document.getElementById('hiddenFileLoader').click()">
+                    <div class="upload-vector-icon">
+                        <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+                    </div>
+                    <p class="upload-headline-txt">Drag & drop your photo</p>
+                    <p class="upload-subline-txt">or click to choose a local file</p>
+                </div>
+                <input type="file" id="hiddenFileLoader" accept="image/*">
+
+                <div class="landing-features-footer">
+                    <h3>Engine Diagnostics</h3>
+                    <div class="feature-bullet-item"><span>⚡</span> Local Hardware Isolation — File streams run entirely on your client machine for total data privacy.</div>
+                    <div class="feature-bullet-item"><span>⚙️</span> Alpha Transparencies — Toggle canvas underlay alphas seamlessly for variable vector optimization.</div>
+                </div>
+            </div>
+
+            <div class="canvas-card" id="activeStudioWorkspace">
+                <div class="pinned-preview-pane">
+                    <div class="canvas-viewport-frame">
+                        <div class="viewport-color-matte" id="viewportMatteBackground"></div>
+                        
+                        <div class="canvas-micro-toolbar">
+                            <div class="micro-action-btn" id="shortcutCropBtn" title="Crop Selection Matrix">
+                                <svg viewBox="0 0 24 24"><path d="M17 15h2V7c0-1.1-.9-2-2-2H9v2h8v8zM7 17V1H5v4H1v2h4v10c0 1.1.9 2 2 2h10v4h2v-4h4v-2H7z"/></svg>
+                            </div>
+                            <div class="micro-action-btn btn-danger" onclick="location.reload()" title="Purge Mounted Asset Context">
+                                <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                            </div>
+                        </div>
+                        <img id="mainDisplayImage" src="" alt="Live Precision Canvas">
+                    </div>
+
+                    <div class="meta-container">
+                        <p class="meta-title-text" id="labelActiveFileName">asset_resource.png</p>
+                        <div class="badge-row">
+                            <span class="pill-badge" id="badgeOrigDimensions">0 x 0</span>
+                            <span style="color:var(--text-muted); font-weight: bold;">➔</span>
+                            <span class="pill-badge variant-success" id="badgeTargetDimensions">0 x 0</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="scrollable-controls-pane">
+                    <div class="studio-controls-panel">
+                        
+                        <div class="control-block" id="metadataSummaryBlock">
+                            <div class="input-group-label">Image Metadata Summary</div>
+                            <div class="metadata-grid-box">
+                                <div class="metadata-row-full">
+                                    <strong>File Name:</strong> <span id="metaFileNameTxt">-</span>
+                                </div>
+                                <div class="metadata-split-grid">
+                                    <div class="metadata-item-cell"><strong>Format:</strong> <span id="metaFormat">-</span></div>
+                                    <div class="metadata-item-cell"><strong>File Weight:</strong> <span id="metaSize">-</span></div>
+                                    <div class="metadata-item-cell"><strong>Resolution:</strong> <span id="metaResolution">-</span></div>
+                                    <div class="metadata-item-cell"><strong>Studio Tag:</strong> <span style="color: var(--brand-primary); font-weight: 800;">Catvers Studio</span></div>
+                                    <div class="metadata-item-cell" style="grid-column: span 2;"><strong>Modified:</strong> <span id="metaModified">-</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="control-block">
+                            <div class="input-group-label">Canvas Background Color</div>
+                            <div class="segmented-3d-grid">
+                                <div class="segmented-btn active" id="bgOptionTransparent">Transparent</div>
+                                <div class="segmented-btn" id="bgOptionCustom">Solid Color</div>
+                            </div>
+                            
+                            <div class="color-matrix-panel" id="colorPickerContainer">
+                                <div class="wheel-flex-row">
+                                    <input type="color" id="colorWheelInput" class="color-circle-wheel" value="#4f46e5">
+                                    <div class="hex-input-wrapper">
+                                        <span>Custom Color Code</span>
+                                        <input type="text" id="colorHexTextInput" class="premium-input" value="#4f46e5" placeholder="#000000">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="control-block">
+                            <div class="input-group-label">Target Box Dimensional Vectors</div>
+                            <div class="dimension-toggle-grid">
+                                <div class="segmented-btn active" id="dimModeOriginal">Keep Original Size</div>
+                                <div class="segmented-btn" id="dimModeCustom">Custom Size Matrix</div>
+                            </div>
+                            
+                            <div class="dimensions-flex-row" id="manualDimensionsEntryWrapper">
+                                <div class="relative-input-wrapper">
+                                    <input type="number" id="configWidthInput" class="premium-input">
+                                    <span class="input-unit">W</span>
+                                </div>
+                                <div class="aspect-lock-toggle active" id="configAspectLockToggle" title="Lock Constraints">
+                                    <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                                </div>
+                                <div class="relative-input-wrapper">
+                                    <input type="number" id="configHeightInput" class="premium-input">
+                                    <span class="input-unit">H</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="control-block">
+                            <div class="input-group-label">Target File Size Limit</div>
+                            <div style="display: flex; gap: 10px;">
+                                <input type="number" id="targetSizeInput" class="premium-input" placeholder="e.g. 150" style="flex: 2;">
+                                <select id="targetSizeUnit" class="premium-select" style="flex: 1;">
+                                    <option value="KB">KB</option>
+                                    <option value="MB">MB</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="size-tracker-card">
+                            <div>Original Disk Footprint: <span id="metricsOriginalSize" style="color:var(--text-main); float:right;">0 KB</span></div>
+                            <div style="border-top: 1px solid rgba(15, 23, 42, 0.06); padding-top: 6px; margin-top: 4px; font-weight:700;">
+                                Estimated Export Weight: <span id="metricsEstimatedSize" style="color:var(--brand-primary); float:right;">--</span>
+                            </div>
+                        </div>
+
+                        <button class="primary-action-pill" id="masterExportBtn">Configure Download Package</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay-sheet fullscreen-modal" id="cropModalOverlayWindow">
+        <div class="modal-sheet-card">
+            <div class="modal-sheet-header">
+                <span>Crop Selection Matrix</span>
+                <span class="modal-sheet-close" id="closeCropModalCross">✕</span>
+            </div>
+            <div class="modal-cropper-frame">
+                <img id="modalEngineTargetImage" src="" alt="">
+            </div>
+            <div class="modal-scrollable-body">
+                <div class="input-block-element">
+                    <label style="font-weight: 700; font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase;">Aspect Alignment Ratio Constraints</label>
+                    <select id="modalAspectRatioSelect" class="premium-select" style="margin-top: 8px;">
+                        <option value="NaN">Free Crop (No Restrictions)</option>
+                        <option value="1">1:1 (Perfect Square)</option>
+                        <option value="1.77777777778">16:9 (Widescreen Landscape)</option>
+                        <option value="0.5625">9:16 (Vertical Smart Phone Ratio)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-sheet-footer">
+                <button class="footer-action-btn btn-secondary" id="modalResetCropBtn">Reset</button>
+                <button class="footer-action-btn btn-primary" id="modalApplyCropBtn">Apply Crop Selection</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay-sheet" id="downloadModalOverlayWindow">
+        <div class="modal-sheet-card">
+            <div class="modal-sheet-header">
+                <span>Packaging Export Settings</span>
+                <span class="modal-sheet-close" id="closeDownloadModalCross">✕</span>
+            </div>
+            <div class="modal-scrollable-body">
+                
+                <div class="input-block-element">
+                    <label style="color: var(--text-main); font-weight: 800; display: block; margin-bottom: 8px;">Rename Asset File First</label>
+                    <input type="text" id="exportCustomNameField" class="premium-input" placeholder="Enter output filename">
+                </div>
+                
+                <div class="input-block-element">
+                    <label style="color: var(--text-main); font-weight: 800; margin-top: 4px;">Choose File Format Extension</label>
+                    <div class="rounded-square-grid">
+                        
+                        <div class="square-radio-wrapper">
+                            <input type="radio" id="radioExtensionJpg" name="exportFormatRadio" value="image/jpeg" checked>
+                            <label for="radioExtensionJpg" class="square-selector-card">
+                                <div class="square-radio-label">JPG</div>
+                                <div class="square-radio-sub">Compressed</div>
+                            </label>
+                        </div>
+
+                        <div class="square-radio-wrapper">
+                            <input type="radio" id="radioExtensionPng" name="exportFormatRadio" value="image/png">
+                            <label for="radioExtensionPng" class="square-selector-card">
+                                <div class="square-radio-label">PNG</div>
+                                <div class="square-radio-sub">Lossless</div>
+                            </label>
+                        </div>
+
+                        <div class="square-radio-wrapper">
+                            <input type="radio" id="radioExtensionWebp" name="exportFormatRadio" value="image/webp">
+                            <label for="radioExtensionWebp" class="square-selector-card">
+                                <div class="square-radio-label">WEBP</div>
+                                <div class="square-radio-sub">Efficient</div>
+                            </label>
+                        </div>
+
+                        <div class="square-radio-wrapper">
+                            <input type="radio" id="radioExtensionPdf" name="exportFormatRadio" value="application/pdf">
+                            <label for="radioExtensionPdf" class="square-selector-card">
+                                <div class="square-radio-label">PDF</div>
+                                <div class="square-radio-sub">Document</div>
+                            </label>
+                        </div>
+
+                        <div class="square-radio-wrapper">
+                            <input type="radio" id="radioExtensionSvg" name="exportFormatRadio" value="image/svg+xml">
+                            <label for="radioExtensionSvg" class="square-selector-card">
+                                <div class="square-radio-label">SVG</div>
+                                <div class="square-radio-sub">Vector</div>
+                            </label>
+                        </div>
+
+                        <div class="square-radio-wrapper">
+                            <input type="radio" id="radioExtensionGif" name="exportFormatRadio" value="image/gif">
+                            <label for="radioExtensionGif" class="square-selector-card">
+                                <div class="square-radio-label">GIF</div>
+                                <div class="square-radio-sub">Static Frame</div>
+                            </label>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="alpha-warning-callout" id="exportAlphaFormatWarningBox">
+                    Notice: The selected format layout framework does not fully support canvas layer underlay alpha transparency streams.
+                </div>
+            </div>
+            <div class="modal-sheet-footer">
+                <button class="footer-action-btn btn-secondary" id="cancelDownloadModalBtn">Cancel</button>
+                <button class="footer-action-btn btn-primary" id="confirmCompileExecuteBtn">Compile & Save File</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
+
+    <script>
+        (function() {
+            // --- Core State Variables ---
+            let cropperInstance = null;
+            let baseFileRawData = null;
+            let originalImgWidth = 0;
+            let originalImgHeight = 0;
+            let originalSizeInKb = 0;
+            
+            let uploadedFileOriginalMimeType = "image/jpeg";
+            let targetSelectedMimeType = "image/jpeg";
+            
+            let canvasBgModeState = "transparent"; 
+            let customColorHexValue = "#4f46e5";
+
+            let isAspectLocked = true;
+            let currentAspectTrackingRatio = 1.0;
+            let customDimensionsActive = false;
+            let globalComputedQuality = 0.92; 
+            
+            // --- DOM Refs ---
+            const hiddenFileLoader = document.getElementById('hiddenFileLoader');
+            const activeStudioWorkspace = document.getElementById('activeStudioWorkspace');
+            const mainDisplayImage = document.getElementById('mainDisplayImage');
+            const viewportMatteBackground = document.getElementById('viewportMatteBackground');
+            const labelActiveFileName = document.getElementById('labelActiveFileName');
+            const dropzoneContainer = document.getElementById('dropzoneContainer');
+            const homeScreenWrapper = document.getElementById('homeScreenWrapper');
+            
+            const badgeOrigDimensions = document.getElementById('badgeOrigDimensions');
+            const badgeTargetDimensions = document.getElementById('badgeTargetDimensions');
+
+            const dimModeOriginal = document.getElementById('dimModeOriginal');
+            const dimModeCustom = document.getElementById('dimModeCustom');
+            const manualDimensionsEntryWrapper = document.getElementById('manualDimensionsEntryWrapper');
+            const configWidthInput = document.getElementById('configWidthInput');
+            const configHeightInput = document.getElementById('configHeightInput');
+            const configAspectLockToggle = document.getElementById('configAspectLockToggle');
+            
+            const metricsOriginalSize = document.getElementById('metricsOriginalSize');
+            const metricsEstimatedSize = document.getElementById('metricsEstimatedSize');
+            const masterExportBtn = document.getElementById('masterExportBtn');
+
+            const bgOptionTransparent = document.getElementById('bgOptionTransparent');
+            const bgOptionCustom = document.getElementById('bgOptionCustom');
+            const colorPickerContainer = document.getElementById('colorPickerContainer');
+            const colorWheelInput = document.getElementById('colorWheelInput');
+            const colorHexTextInput = document.getElementById('colorHexTextInput');
+
+            const targetSizeInput = document.getElementById('targetSizeInput');
+            const targetSizeUnit = document.getElementById('targetSizeUnit');
+
+            const metaFileNameTxt = document.getElementById('metaFileNameTxt');
+            const metaFormat = document.getElementById('metaFormat');
+            const metaSize = document.getElementById('metaSize');
+            const metaResolution = document.getElementById('metaResolution');
+            const metaModified = document.getElementById('metaModified');
+
+            const cropModalOverlayWindow = document.getElementById('cropModalOverlayWindow');
+            const shortcutCropBtn = document.getElementById('shortcutCropBtn');
+            const closeCropModalCross = document.getElementById('closeCropModalCross');
+            const modalEngineTargetImage = document.getElementById('modalEngineTargetImage');
+            const modalAspectRatioSelect = document.getElementById('modalAspectRatioSelect');
+            const modalApplyCropBtn = document.getElementById('modalApplyCropBtn');
+            const modalResetCropBtn = document.getElementById('modalResetCropBtn');
+
+            const downloadModalOverlayWindow = document.getElementById('downloadModalOverlayWindow');
+            const closeDownloadModalCross = document.getElementById('closeDownloadModalCross');
+            const cancelDownloadModalBtn = document.getElementById('cancelDownloadModalBtn');
+            const exportCustomNameField = document.getElementById('exportCustomNameField');
+            const exportAlphaFormatWarningBox = document.getElementById('exportAlphaFormatWarningBox');
+            const confirmCompileExecuteBtn = document.getElementById('confirmCompileExecuteBtn');
+
+            // --- Utility Functions ---
+            function generateWrittenTimestamp() {
+                const dateInstance = new Date();
+                let rawHours = dateInstance.getHours();
+                const rawMinutes = String(dateInstance.getMinutes()).padStart(2, '0');
+                const rawSeconds = String(dateInstance.getSeconds()).padStart(2, '0');
+                const cycleMarker = rawHours >= 12 ? 'PM' : 'AM';
+                rawHours = rawHours % 12 || 12;
+                return `${String(rawHours).padStart(2, '0')}-${rawMinutes}-${rawSeconds} ${cycleMarker}`;
+            }
+
+            function getEffectiveDimensions() {
+                const w = customDimensionsActive ? (parseFloat(configWidthInput.value) || originalImgWidth) : originalImgWidth;
+                const h = customDimensionsActive ? (parseFloat(configHeightInput.value) || originalImgHeight) : originalImgHeight;
+                return { w: Math.round(w), h: Math.round(h) };
+            }
+
+            // --- Core Functions ---
+            function toggleDimensionSettingsFramework(activateCustom) {
+                customDimensionsActive = activateCustom;
+                if(customDimensionsActive) {
+                    dimModeCustom.classList.add('active');
+                    dimModeOriginal.classList.remove('active');
+                    manualDimensionsEntryWrapper.classList.add('visible');
+                } else {
+                    dimModeOriginal.classList.add('active');
+                    dimModeCustom.classList.remove('active');
+                    manualDimensionsEntryWrapper.classList.remove('visible');
+                    configWidthInput.value = originalImgWidth;
+                    configHeightInput.value = originalImgHeight;
+                }
+                syncDisplayTransformations();
+            }
+
+            function adjustBackgroundVisualStateMatrix(targetSelectedMode) {
+                canvasBgModeState = targetSelectedMode;
+                bgOptionTransparent.classList.remove('active');
+                bgOptionCustom.classList.remove('active');
+
+                if (canvasBgModeState === "transparent") {
+                    bgOptionTransparent.classList.add('active');
+                    colorPickerContainer.classList.remove('visible');
+                    viewportMatteBackground.style.opacity = "0"; 
+                    mainDisplayImage.style.backgroundColor = "transparent";
+                } else if (canvasBgModeState === "custom") {
+                    bgOptionCustom.classList.add('active');
+                    colorPickerContainer.classList.add('visible');
+                    viewportMatteBackground.style.opacity = "1";
+                    viewportMatteBackground.style.backgroundColor = customColorHexValue;
+                    mainDisplayImage.style.backgroundColor = customColorHexValue;
+                }
+                executeRealtimeCompressionCalculationMetrics();
+            }
+
+            function syncDisplayTransformations() {
+                const { w, h } = getEffectiveDimensions();
+                badgeTargetDimensions.textContent = `${w} x ${h}`;
+                executeRealtimeCompressionCalculationMetrics();
+            }
+
+            // --- Compression Engine ---
+            let pipelineDebounceToken = null;
+            const pipelineCanvas = document.createElement('canvas');
+            const pipelineCtx = pipelineCanvas.getContext('2d');
+
+            function executeRealtimeCompressionCalculationMetrics() {
+                clearTimeout(pipelineDebounceToken);
+                metricsEstimatedSize.textContent = "Calculating...";
+                
+                pipelineDebounceToken = setTimeout(async () => {
+                    if(!baseFileRawData) return;
+
+                    const { w, h } = getEffectiveDimensions();
+                    pipelineCanvas.width = w;
+                    pipelineCanvas.height = h;
+
+                    // Background handling
+                    if (canvasBgModeState === "custom") {
+                        pipelineCtx.fillStyle = customColorHexValue;
+                        pipelineCtx.fillRect(0, 0, w, h);
+                    } else if (targetSelectedMimeType === "image/jpeg" || targetSelectedMimeType === "application/pdf") {
+                        pipelineCtx.fillStyle = "#ffffff";
+                        pipelineCtx.fillRect(0, 0, w, h);
+                    } else {
+                        pipelineCtx.clearRect(0, 0, w, h);
+                    }
+
+                    const img = new Image();
+                    img.onload = async function() {
+                        pipelineCtx.drawImage(img, 0, 0, w, h);
+                        
+                        let exportMime = targetSelectedMimeType;
+                        if (exportMime === "application/pdf") exportMime = "image/jpeg";
+                        if (exportMime === "image/svg+xml") exportMime = "image/png";
+
+                        let userTargetBytes = Infinity;
+                        const rawInputVal = parseFloat(targetSizeInput.value);
+                        if (!isNaN(rawInputVal) && rawInputVal > 0) {
+                            const scaleMultiplier = (targetSizeUnit.value === "MB") ? 1024 * 1024 : 1024;
+                            userTargetBytes = rawInputVal * scaleMultiplier;
+                        }
+
+                        let quality = 0.92;
+                        if (userTargetBytes !== Infinity) {
+                            let low = 0.01, high = 1.0;
+                            for (let i = 0; i < 10; i++) {
+                                let mid = (low + high) / 2;
+                                let size = await new Promise(resolve => {
+                                    pipelineCanvas.toBlob(b => resolve(b ? b.size : 0), exportMime, mid);
+                                });
+                                if (size <= userTargetBytes) {
+                                    quality = mid;
+                                    low = mid;
+                                } else {
+                                    high = mid;
+                                }
+                            }
+                        }
+
+                        pipelineCanvas.toBlob(blob => {
+                            if (blob) {
+                                let size = blob.size;
+                                if (targetSelectedMimeType === "image/svg+xml") size *= 1.35;
+                                const kb = Math.round(size / 1024);
+                                metricsEstimatedSize.textContent = kb > 1024 ? `${(kb / 1024).toFixed(2)} MB` : `${kb} KB`;
+                                globalComputedQuality = quality;
+                            } else {
+                                metricsEstimatedSize.textContent = "--";
+                            }
+                        }, exportMime, quality);
+                    };
+                    img.src = mainDisplayImage.src;
+                }, 400);
+            }
+
+            // --- Event Listeners ---
+            // Drag & Drop
+            ['dragenter', 'dragover'].forEach(name => {
+                dropzoneContainer.addEventListener(name, (e) => {
+                    e.preventDefault();
+                    dropzoneContainer.style.borderColor = "var(--brand-primary)";
+                    dropzoneContainer.style.background = "rgba(255, 255, 255, 0.95)";
+                });
+            });
+            ['dragleave', 'drop'].forEach(name => {
+                dropzoneContainer.addEventListener(name, (e) => {
+                    e.preventDefault();
+                    dropzoneContainer.style.borderColor = "rgba(79, 70, 229, 0.3)";
+                    dropzoneContainer.style.background = "rgba(255, 255, 255, 0.85)";
+                });
+            });
+            dropzoneContainer.addEventListener('drop', (e) => {
+                const dt = e.dataTransfer;
+                if(dt.files.length) {
+                    hiddenFileLoader.files = dt.files;
+                    hiddenFileLoader.dispatchEvent(new Event('change'));
+                }
+            });
+
+            // File Loader
+            hiddenFileLoader.addEventListener('change', function(e) {
+                if(e.target.files && e.target.files[0]) {
+                    const file = e.target.files[0];
+                    uploadedFileOriginalMimeType = file.type || "image/jpeg";
+                    targetSelectedMimeType = uploadedFileOriginalMimeType;
+                    
+                    const rawNameString = file.name || "unnamed_image";
+                    labelActiveFileName.textContent = rawNameString;
+                    metaFileNameTxt.textContent = rawNameString; 
+                    
+                    originalSizeInKb = Math.round(file.size / 1024);
+                    metricsOriginalSize.textContent = `${originalSizeInKb} KB`;
+                    metaSize.textContent = originalSizeInKb > 1024 ? `${(originalSizeInKb / 1024).toFixed(2)} MB` : `${originalSizeInKb} KB`;
+                    metaFormat.textContent = uploadedFileOriginalMimeType.split('/')[1].toUpperCase();
+                    
+                    const lastModDate = new Date(file.lastModified);
+                    metaModified.textContent = lastModDate.toLocaleDateString(undefined, {month: 'short', day: 'numeric', year: 'numeric'});
+
+                    const fileReaderInstance = new FileReader();
+                    fileReaderInstance.onload = function(event) {
+                        baseFileRawData = event.target.result;
+                        mainDisplayImage.src = baseFileRawData;
+
+                        const metadataLayoutEngineElement = new Image();
+                        metadataLayoutEngineElement.onload = function() {
+                            originalImgWidth = metadataLayoutEngineElement.width;
+                            originalImgHeight = metadataLayoutEngineElement.height;
+                            currentAspectTrackingRatio = originalImgWidth / originalImgHeight;
+
+                            configWidthInput.value = originalImgWidth;
+                            configHeightInput.value = originalImgHeight;
+                            badgeOrigDimensions.textContent = `${originalImgWidth} x ${originalImgHeight}`;
+                            metaResolution.textContent = `${originalImgWidth} × ${originalImgHeight}`;
+                            
+                            homeScreenWrapper.classList.remove('view-visible');
+                            activeStudioWorkspace.classList.add('view-visible');
+                            
+                            toggleDimensionSettingsFramework(false);
+                            adjustBackgroundVisualStateMatrix("transparent");
+                        };
+                        metadataLayoutEngineElement.src = baseFileRawData;
+                    };
+                    fileReaderInstance.readAsDataURL(file);
+                }
+            });
+
+            // Dimension Mode Toggles
+            dimModeOriginal.addEventListener('click', () => toggleDimensionSettingsFramework(false));
+            dimModeCustom.addEventListener('click', () => toggleDimensionSettingsFramework(true));
+
+            // Background Mode Toggles
+            bgOptionTransparent.addEventListener('click', () => adjustBackgroundVisualStateMatrix("transparent"));
+            bgOptionCustom.addEventListener('click', () => adjustBackgroundVisualStateMatrix("custom"));
+
+            // Color Controls
+            colorWheelInput.addEventListener('input', function() {
+                customColorHexValue = this.value;
+                colorHexTextInput.value = this.value.toUpperCase();
+                if (canvasBgModeState === "custom") {
+                    viewportMatteBackground.style.backgroundColor = customColorHexValue;
+                    mainDisplayImage.style.backgroundColor = customColorHexValue;
+                }
+                executeRealtimeCompressionCalculationMetrics();
+            });
+
+            colorHexTextInput.addEventListener('input', function() {
+                let userValue = this.value.trim();
+                if(!userValue.startsWith('#')) userValue = '#' + userValue;
+                if(/^#[0-9A-F]{6}$/i.test(userValue)) {
+                    customColorHexValue = userValue;
+                    colorWheelInput.value = userValue;
+                    if (canvasBgModeState === "custom") {
+                        viewportMatteBackground.style.backgroundColor = customColorHexValue;
+                        mainDisplayImage.style.backgroundColor = customColorHexValue;
+                    }
+                    executeRealtimeCompressionCalculationMetrics();
+                }
+            });
+
+            // Aspect Lock
+            configAspectLockToggle.addEventListener('click', () => {
+                isAspectLocked = !isAspectLocked;
+                configAspectLockToggle.classList.toggle('active', isAspectLocked);
+            });
+
+            // Dimension Inputs
+            configWidthInput.addEventListener('input', () => {
+                if(isAspectLocked && currentAspectTrackingRatio) {
+                    configHeightInput.value = Math.round(parseFloat(configWidthInput.value) / currentAspectTrackingRatio) || '';
+                }
+                syncDisplayTransformations();
+            });
+
+            configHeightInput.addEventListener('input', () => {
+                if(isAspectLocked && currentAspectTrackingRatio) {
+                    configWidthInput.value = Math.round(parseFloat(configHeightInput.value) * currentAspectTrackingRatio) || '';
+                }
+                syncDisplayTransformations();
+            });
+
+            [targetSizeInput, targetSizeUnit].forEach(elem => {
+                elem.addEventListener('input', () => executeRealtimeCompressionCalculationMetrics());
+            });
+
+            // --- Crop Modal ---
+            shortcutCropBtn.addEventListener('click', () => {
+                modalEngineTargetImage.src = mainDisplayImage.src;
+                cropModalOverlayWindow.classList.add('active');
+                
+                setTimeout(() => {
+                    if (cropperInstance) cropperInstance.destroy();
+                    cropperInstance = new Cropper(modalEngineTargetImage, {
+                        viewMode: 1, dragMode: 'crop', autoCropArea: 1.0, background: false, responsive: true, restore: false
+                    });
+                }, 60);
+            });
+
+            function dismissCropOverlaySheet() {
+                cropModalOverlayWindow.classList.remove('active');
+                if(cropperInstance) { cropperInstance.destroy(); cropperInstance = null; }
+            }
+            closeCropModalCross.addEventListener('click', dismissCropOverlaySheet);
+            modalResetCropBtn.addEventListener('click', () => { if(cropperInstance) cropperInstance.reset(); });
+            modalAspectRatioSelect.addEventListener('change', function() {
+                if(cropperInstance) cropperInstance.setAspectRatio(parseFloat(this.value) || NaN);
+            });
+
+            modalApplyCropBtn.addEventListener('click', () => {
+                if(!cropperInstance) return;
+                const croppedCanvasBuffer = cropperInstance.getCroppedCanvas({ imageSmoothingEnabled: true, imageSmoothingQuality: 'high' });
+                mainDisplayImage.src = croppedCanvasBuffer.toDataURL("image/png");
+                
+                originalImgWidth = croppedCanvasBuffer.width;
+                originalImgHeight = croppedCanvasBuffer.height;
+                currentAspectTrackingRatio = originalImgWidth / originalImgHeight;
+                
+                configWidthInput.value = originalImgWidth;
+                configHeightInput.value = originalImgHeight;
+                badgeOrigDimensions.textContent = `${originalImgWidth} x ${originalImgHeight}`;
+                metaResolution.textContent = `${originalImgWidth} × ${originalImgHeight}`;
+
+                dismissCropOverlaySheet();
+                syncDisplayTransformations();
+            });
+
+            // --- Export Modal ---
+            const exportFormatRadios = document.querySelectorAll('input[name="exportFormatRadio"]');
+            exportFormatRadios.forEach(radioElement => {
+                radioElement.addEventListener('change', function() {
+                    targetSelectedMimeType = this.value;
+                    evaluateAlphaChannelWarningBannerLogic();
+                    executeRealtimeCompressionCalculationMetrics();
+                });
+            });
+
+            masterExportBtn.addEventListener('click', () => {
+                exportCustomNameField.value = `resize image - ${generateWrittenTimestamp()}`;
+                // Preselect the original format if available
+                const targetMatchedRadio = document.querySelector(`input[name="exportFormatRadio"][value="${uploadedFileOriginalMimeType}"]`);
+                if (targetMatchedRadio) {
+                    targetMatchedRadio.checked = true;
+                    targetSelectedMimeType = uploadedFileOriginalMimeType;
+                } else {
+                    document.getElementById('radioExtensionJpg').checked = true;
+                    targetSelectedMimeType = "image/jpeg";
+                }
+                evaluateAlphaChannelWarningBannerLogic();
+                downloadModalOverlayWindow.classList.add('active');
+                setTimeout(() => exportCustomNameField.focus(), 150);
+            });
+
+            function dismissPackagingExportSheetPopup() { downloadModalOverlayWindow.classList.remove('active'); }
+            closeDownloadModalCross.addEventListener('click', dismissPackagingExportSheetPopup);
+            cancelDownloadModalBtn.addEventListener('click', dismissPackagingExportSheetPopup);
+
+            function evaluateAlphaChannelWarningBannerLogic() {
+                if (canvasBgModeState === "transparent" && targetSelectedMimeType === "image/jpeg") {
+                    exportAlphaFormatWarningBox.style.display = "block";
+                } else {
+                    exportAlphaFormatWarningBox.style.display = "none";
+                }
+            }
+
+            // --- Compile & Save ---
+            confirmCompileExecuteBtn.addEventListener('click', () => {
+                const rawUserFieldValue = exportCustomNameField.value.trim();
+                const staticTimeFallbackPattern = `resize image - ${generateWrittenTimestamp()}`;
+                let finalOutputFilename = rawUserFieldValue ? rawUserFieldValue : staticTimeFallbackPattern;
+
+                dismissPackagingExportSheetPopup();
+                masterExportBtn.textContent = "Processing Download Stream...";
+                masterExportBtn.style.opacity = "0.75";
+
+                setTimeout(() => {
+                    const { w, h } = getEffectiveDimensions();
+
+                    const compilationCanvas = document.createElement('canvas');
+                    compilationCanvas.width = w;
+                    compilationCanvas.height = h;
+                    const finalCanvasContext = compilationCanvas.getContext('2d');
+
+                    if (canvasBgModeState === "custom") {
+                        finalCanvasContext.fillStyle = customColorHexValue;
+                        finalCanvasContext.fillRect(0, 0, w, h);
+                    } else if (targetSelectedMimeType === "image/jpeg" || targetSelectedMimeType === "application/pdf") {
+                        finalCanvasContext.fillStyle = "#ffffff";
+                        finalCanvasContext.fillRect(0, 0, w, h);
+                    }
+
+                    const processDeploymentImg = new Image();
+                    processDeploymentImg.onload = function() {
+                        finalCanvasContext.drawImage(processDeploymentImg, 0, 0, w, h);
+                        
+                        if (targetSelectedMimeType === "application/pdf") {
+                            try {
+                                const { jsPDF } = window.jspdf;
+                                const pdfDoc = new jsPDF({
+                                    orientation: w > h ? 'l' : 'p',
+                                    unit: 'px',
+                                    format: [w, h]
+                                });
+                                const dataUrl = compilationCanvas.toDataURL('image/jpeg', globalComputedQuality);
+                                pdfDoc.addImage(dataUrl, 'JPEG', 0, 0, w, h);
+                                pdfDoc.save(`${finalOutputFilename}.pdf`);
+                            } catch (e) { console.error("PDF error", e); }
+                        } 
+                        else if (targetSelectedMimeType === "image/svg+xml") {
+                            const rasterPngDataUrl = compilationCanvas.toDataURL('image/png');
+                            const svgString = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><image width="${w}" height="${h}" href="${rasterPngDataUrl}"/></svg>`;
+                            const blob = new Blob([svgString], {type: "image/svg+xml;charset=utf-8"});
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.download = `${finalOutputFilename}.svg`;
+                            a.href = url;
+                            a.click();
+                            setTimeout(() => URL.revokeObjectURL(url), 400);
+                        } 
+                        else {
+                            let ext = "jpg";
+                            if (targetSelectedMimeType.includes('png')) ext = "png";
+                            else if (targetSelectedMimeType.includes('webp')) ext = "webp";
+                            else if (targetSelectedMimeType.includes('gif')) ext = "gif";
+
+                            const dataUrl = compilationCanvas.toDataURL(targetSelectedMimeType, globalComputedQuality);
+                            const a = document.createElement('a');
+                            a.download = `${finalOutputFilename}.${ext}`;
+                            a.href = dataUrl;
+                            a.click();
+                        }
+
+                        masterExportBtn.textContent = "Configure Download Package";
+                        masterExportBtn.style.opacity = "1";
+                    };
+                    processDeploymentImg.src = mainDisplayImage.src;
+                }, 100);
+            });
+
+            // Close modals on backdrop click
+            window.addEventListener('click', function(e) {
+                if (e.target === cropModalOverlayWindow) dismissCropOverlaySheet();
+                if (e.target === downloadModalOverlayWindow) dismissPackagingExportSheetPopup();
+            });
+
+        })();
+    </script>
+</body>
+</html>
